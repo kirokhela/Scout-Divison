@@ -1,0 +1,1153 @@
+≈<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier League Table - Dynamic Gameweeks</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(45deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.05) 10px,
+                rgba(255, 255, 255, 0.05) 20px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(50px); }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .admin-section {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            padding: 20px;
+            margin: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+        }
+
+        .admin-section h3 {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .admin-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .admin-btn {
+            background: rgba(255, 255, 255, 0.9);
+            color: #2c3e50;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 10px;
+            border: 2px solid #e1e8ed;
+            display: none;
+        }
+
+        .input-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .gameweek-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e1e8ed;
+        }
+
+        .gameweek-selector label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .gameweek-selector select {
+            padding: 10px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            color: #2c3e50;
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        .team-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .team-input {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+        }
+
+        .team-input input {
+            width: 60px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .save-btn {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .save-btn:hover {
+            box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px;
+        }
+
+        .league-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .league-table th {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .league-table th:first-child {
+            text-align: center;
+            width: 60px;
+        }
+
+        .league-table th:nth-child(2) {
+            width: 250px;
+        }
+
+        .league-table th.gameweek-header {
+            text-align: center;
+            width: 80px;
+        }
+
+        .league-table th.total-header {
+            text-align: center;
+            width: 100px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .league-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #e1e8ed;
+            transition: all 0.3s ease;
+        }
+
+        .league-table tr:hover {
+            background: linear-gradient(90deg, #f8f9fa, #e9ecef);
+            transform: translateX(5px);
+        }
+
+        .league-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .position {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #2c3e50;
+            text-align: center;
+            width: 60px;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .division {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .division.alpha {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+        }
+
+        .division.beta {
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            color: white;
+        }
+
+        .points {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .total-points {
+            font-weight: bold;
+            font-size: 1.3em;
+            color: #e74c3c;
+            text-align: center;
+        }
+
+        .top-3 {
+            background: linear-gradient(90deg, #fff9c4, #f7f7f7);
+            border-left: 4px solid #f39c12;
+        }
+
+        .top-1 {
+            background: linear-gradient(90deg, #ffd700, #fff9c4);
+            border-left: 4px solid #f1c40f;
+        }
+
+        .bottom-3 {
+            background: linear-gradient(90deg, #ffebee, #f7f7f7);
+            border-left: 4px solid #e74c3c;
+        }
+
+        .stats-footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .legend-color.gold {
+            background: #f1c40f;
+        }
+
+        .legend-color.orange {
+            background: #f39c12;
+        }
+
+        .legend-color.red {
+            background: #e74c3c;
+        }
+
+        /* Password Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .modal h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #2a5298;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+
+        .modal-btn.cancel {
+            background: linear-gradient(45deg, #6c757d, #5a6268);
+            color: white;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px;
+            text-align: center;
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .admin-status {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .league-table th,
+            .league-table td {
+                padding: 10px 8px;
+                font-size: 0.9em;
+            }
+            
+            .controls-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .admin-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .team-inputs {
+                grid-template-columns: 1fr;
+            }
+
+            .gameweek-selector {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .modal-content {
+                margin: 25% auto;
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Premier League Table</h1>
+            <p id="current-gameweek">Current Gameweek: 1</p>
+        </div>
+
+        <div class="controls">
+            <div class="controls-row">
+                <button class="btn" onclick="requestPassword('adminAccess')">🔐 Admin Access</button>
+                <button class="btn" onclick="showPublicView()">👁️ Public View</button>
+            </div>
+        </div>
+
+        <div class="success-message" id="success-message">
+            Action completed successfully!
+        </div>
+
+        <div class="admin-section hidden" id="admin-section">
+            <div class="admin-status">
+                🔓 Admin Mode Active
+            </div>
+            <h3>Admin Controls</h3>
+            <div class="admin-controls">
+                <button class="admin-btn" onclick="addGameweek()">➕ Add New Gameweek</button>
+                <button class="admin-btn" onclick="showInputSection()">✏️ Update Scores</button>
+                <button class="admin-btn" onclick="resetData()">🔄 Reset All Data</button>
+                <button class="admin-btn" onclick="exportData()">📊 Export Excel</button>
+                <button class="admin-btn" onclick="clearStorage()">🗑️ Clear Storage</button>
+            </div>
+        </div>
+
+        <div class="input-section" id="input-section">
+            <h3>Enter Scores for Selected Gameweek</h3>
+            
+            <div class="gameweek-selector">
+                <label for="gameweek-select">Select Gameweek to Edit:</label>
+                <select id="gameweek-select" onchange="onGameweekChange()">
+                    <option value="1">Gameweek 1</option>
+                </select>
+            </div>
+            
+            <div class="team-inputs" id="team-inputs">
+                <!-- Team inputs will be generated here -->
+            </div>
+            <div style="text-align: center;">
+                <button class="btn save-btn" onclick="saveScores()">💾 Save Scores</button>
+                <button class="btn" onclick="toggleInputSection()">❌ Cancel</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="league-table" id="league-table">
+                <thead id="table-header">
+                    <tr>
+                        <th>Pos</th>
+                        <th>Team</th>
+                        <th class="gameweek-header">GW1</th>
+                        <th class="total-header">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Table rows will be generated here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats-footer">
+            <p><strong>Total Teams:</strong> 12 | <strong>Alpha Division:</strong> 6 teams | <strong>Beta Division:</strong> 6 teams</p>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color gold"></div>
+                    <span>1st Place</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color orange"></div>
+                    <span>Top 3</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color red"></div>
+                    <span>Bottom 3</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleImportFile(event)">
+
+    <!-- Password Modal -->
+    <div id="password-modal" class="modal">
+        <div class="modal-content">
+            <h2>🔐 Enter Admin Password</h2>
+            <input type="password" id="password-input" placeholder="Enter password" maxlength="20">
+            <div class="error-message" id="error-message">❌ Incorrect password. Please try again.</div>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="checkPassword()">✅ Confirm</button>
+                <button class="modal-btn cancel" onclick="closePasswordModal()">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('JavaScript loaded successfully!');
+        
+        // Password for admin functions
+        const ADMIN_PASSWORD = 'kirokhela';
+        
+        // Admin access state
+        let isAdminMode = false;
+        let pendingAction = null;
+
+        // Initial team data
+        let teams = [
+            { name: 'Heroes', division: 'Alpha', scores: [23] },
+            { name: 'Krakens', division: 'Beta', scores: [21] },
+            { name: 'Whales', division: 'Alpha', scores: [21] },
+            { name: 'Hunters', division: 'Beta', scores: [19] },
+            { name: 'Seals', division: 'Alpha', scores: [18] },
+            { name: 'Sharks', division: 'Beta', scores: [18] },
+            { name: 'Pirates', division: 'Alpha', scores: [14] },
+            { name: 'Sailors', division: 'Beta', scores: [14] },
+            { name: 'Strangers', division: 'Beta', scores: [14] },
+            { name: 'Seahorse', division: 'Alpha', scores: [10] },
+            { name: 'Anchors', division: 'Alpha', scores: [9] },
+            { name: 'Alligators', division: 'Beta', scores: [6] }
+        ];
+
+        let currentGameweek = 1;
+        let selectedGameweek = 1;
+
+        // Load data from localStorage with fallback to initial data
+        function loadData() {
+            const savedData = localStorage.getItem('premierLeagueData');
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    teams = parsedData.teams || teams;
+                    currentGameweek = parsedData.currentGameweek || 1;
+                    selectedGameweek = parsedData.selectedGameweek || 1;
+                    console.log('Data loaded from localStorage');
+                } catch (e) {
+                    console.error('Error loading data from localStorage:', e);
+                    saveData(); // Save current data if loading fails
+                }
+            } else {
+                console.log('No saved data found, using initial data');
+                saveData(); // Save initial data
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            const dataToSave = {
+                teams: teams,
+                currentGameweek: currentGameweek,
+                selectedGameweek: selectedGameweek,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            try {
+                localStorage.setItem('premierLeagueData', JSON.stringify(dataToSave));
+                console.log('Data saved to localStorage');
+            } catch (e) {
+                console.error('Error saving data to localStorage:', e);
+            }
+        }
+
+        // Show success message
+        function showSuccessMessage(message = 'Action completed successfully!') {
+            const successMsg = document.getElementById('success-message');
+            successMsg.textContent = message;
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 3000);
+        }
+
+        // Admin access functions
+        function requestPassword(action) {
+            console.log('requestPassword called with action:', action);
+            pendingAction = action;
+            document.getElementById('password-modal').style.display = 'block';
+            document.getElementById('password-input').value = '';
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('password-input').focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').style.display = 'none';
+            pendingAction = null;
+        }
+
+        function checkPassword() {
+            const enteredPassword = document.getElementById('password-input').value;
+            console.log('Password entered:', enteredPassword);
+            console.log('Expected password:', ADMIN_PASSWORD);
+            console.log('Pending action:', pendingAction);
+            
+            if (enteredPassword === ADMIN_PASSWORD) {
+                console.log('Password correct');
+                
+                // Handle the pending action BEFORE closing modal (which clears pendingAction)
+                if (pendingAction === 'adminAccess') {
+                    console.log('Calling enableAdminMode');
+                    enableAdminMode();
+                }
+                
+                // Close modal after handling the action
+                closePasswordModal();
+            } else {
+                console.log('Password incorrect');
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('password-input').value = '';
+                document.getElementById('password-input').focus();
+            }
+        }
+
+        function enableAdminMode() {
+            console.log('enableAdminMode called');
+            isAdminMode = true;
+            
+            const adminSection = document.getElementById('admin-section');
+            console.log('Admin section element:', adminSection);
+            
+            if (adminSection) {
+                adminSection.classList.remove('hidden');
+                console.log('Admin section classes after removal:', adminSection.classList);
+                
+                // Double check by setting display style directly
+                adminSection.style.display = 'block';
+                console.log('Admin section display style set to block');
+            } else {
+                console.error('Admin section element not found!');
+            }
+            
+            showSuccessMessage('🔓 Admin access granted! You can now manage gameweeks and scores.');
+        }
+
+        function showPublicView() {
+            isAdminMode = false;
+            document.getElementById('admin-section').classList.add('hidden');
+            document.getElementById('input-section').style.display = 'none';
+            showSuccessMessage('👁️ Switched to public view');
+        }
+
+        // Allow Enter key to submit password
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('password-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    checkPassword();
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePasswordModal();
+                }
+            });
+        });
+
+        function calculateTotal(scores) {
+            return scores.reduce((sum, score) => sum + score, 0);
+        }
+
+        function sortTeams() {
+            return teams.sort((a, b) => {
+                const totalA = calculateTotal(a.scores);
+                const totalB = calculateTotal(b.scores);
+                return totalB - totalA;
+            });
+        }
+
+        function getPositionClass(position, total) {
+            if (position === 1) return 'top-1';
+            if (position <= 3) return 'top-3';
+            if (position >= teams.length - 2) return 'bottom-3';
+            return '';
+        }
+
+        function renderTable() {
+            const sortedTeams = sortTeams();
+            const tableBody = document.getElementById('table-body');
+            
+            tableBody.innerHTML = '';
+            
+            sortedTeams.forEach((team, index) => {
+                const position = index + 1;
+                const total = calculateTotal(team.scores);
+                const positionClass = getPositionClass(position, total);
+                
+                const row = document.createElement('tr');
+                row.className = positionClass;
+                
+                let scoresCells = '';
+                for (let i = 0; i < currentGameweek; i++) {
+                    const score = team.scores[i] || 0;
+                    scoresCells += `<td class="points">${score}</td>`;
+                }
+                
+                row.innerHTML = `
+                    <td class="position">${position}</td>
+                    <td class="team-name">
+                        ${team.name}
+                        <span class="division ${team.division.toLowerCase()}">${team.division}</span>
+                    </td>
+                    ${scoresCells}
+                    <td class="total-points">${total}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        function renderTableHeader() {
+            const tableHeader = document.getElementById('table-header');
+            
+            let gameweekHeaders = '';
+            for (let i = 1; i <= currentGameweek; i++) {
+                gameweekHeaders += `<th class="gameweek-header">GW${i}</th>`;
+            }
+            
+            tableHeader.innerHTML = `
+                <tr>
+                    <th>Pos</th>
+                    <th>Team</th>
+                    ${gameweekHeaders}
+                    <th class="total-header">Total</th>
+                </tr>
+            `;
+        }
+
+        function updateGameweekSelector() {
+            const gameweekSelect = document.getElementById('gameweek-select');
+            gameweekSelect.innerHTML = '';
+            
+            for (let i = 1; i <= currentGameweek; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `Gameweek ${i}`;
+                gameweekSelect.appendChild(option);
+            }
+            
+            gameweekSelect.value = selectedGameweek;
+        }
+
+        function onGameweekChange() {
+            const gameweekSelect = document.getElementById('gameweek-select');
+            selectedGameweek = parseInt(gameweekSelect.value);
+            generateTeamInputs();
+        }
+
+        function addGameweek() {
+            if (!isAdminMode) return;
+            
+            currentGameweek++;
+            selectedGameweek = currentGameweek;
+            
+            // Add zero scores for new gameweek
+            teams.forEach(team => {
+                team.scores.push(0);
+            });
+            
+            renderTableHeader();
+            renderTable();
+            updateGameweekSelector();
+            
+            document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
+            
+            // Save data after adding gameweek
+            saveData();
+            
+            showSuccessMessage(`➕ Gameweek ${currentGameweek} added successfully!`);
+            
+            // Automatically show input section for new gameweek
+            generateTeamInputs();
+            showInputSection();
+        }
+
+        function generateTeamInputs() {
+            const teamInputs = document.getElementById('team-inputs');
+            teamInputs.innerHTML = '';
+            
+            teams.forEach((team, index) => {
+                const teamInput = document.createElement('div');
+                teamInput.className = 'team-input';
+                const currentScore = team.scores[selectedGameweek - 1] || 0;
+                teamInput.innerHTML = `
+                    <span>${team.name} <span class="division ${team.division.toLowerCase()}">${team.division}</span></span>
+                    <input type="number" id="score-${index}" value="${currentScore}" min="0" max="50">
+                `;
+                teamInputs.appendChild(teamInput);
+            });
+        }
+
+        function showInputSection() {
+            if (!isAdminMode) return;
+            
+            updateGameweekSelector();
+            generateTeamInputs();
+            document.getElementById('input-section').style.display = 'block';
+        }
+
+        function toggleInputSection() {
+            const inputSection = document.getElementById('input-section');
+            const isVisible = inputSection.style.display === 'block';
+            
+            if (isVisible) {
+                inputSection.style.display = 'none';
+            } else {
+                showInputSection();
+            }
+        }
+
+        function saveScores() {
+            if (!isAdminMode) return;
+            
+            teams.forEach((team, index) => {
+                const scoreInput = document.getElementById(`score-${index}`);
+                const score = parseInt(scoreInput.value) || 0;
+                
+                while (team.scores.length < selectedGameweek) {
+                    team.scores.push(0);
+                }
+                
+                team.scores[selectedGameweek - 1] = score;
+            });
+            
+            renderTable();
+            toggleInputSection();
+            
+            // Save data after updating scores
+            saveData();
+            
+            showSuccessMessage(`💾 Scores saved for Gameweek ${selectedGameweek}!`);
+        }
+
+        function resetData() {
+            if (!isAdminMode) return;
+            
+            if (confirm('⚠️ Are you sure you want to reset all data? This action cannot be undone.')) {
+                // Reset to initial state
+                teams = [
+                    { name: 'Heroes', division: 'Alpha', scores: [23] },
+                    { name: 'Krakens', division: 'Beta', scores: [21] },
+                    { name: 'Whales', division: 'Alpha', scores: [21] },
+                    { name: 'Hunters', division: 'Beta', scores: [19] },
+                    { name: 'Seals', division: 'Alpha', scores: [18] },
+                    { name: 'Sharks', division: 'Beta', scores: [18] },
+                    { name: 'Pirates', division: 'Alpha', scores: [14] },
+                    { name: 'Sailors', division: 'Beta', scores: [14] },
+                    { name: 'Strangers', division: 'Beta', scores: [14] },
+                    { name: 'Seahorse', division: 'Alpha', scores: [10] },
+                    { name: 'Anchors', division: 'Alpha', scores: [9] },
+                    { name: 'Alligators', division: 'Beta', scores: [6] }
+                ];
+                
+                currentGameweek = 1;
+                selectedGameweek = 1;
+                
+                renderTableHeader();
+                renderTable();
+                updateGameweekSelector();
+                
+                document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
+                document.getElementById('input-section').style.display = 'none';
+                
+                // Save reset data
+                saveData();
+                
+                showSuccessMessage('🔄 All data has been reset to initial state!');
+            }
+        }
+
+        function exportData() {
+            if (!isAdminMode) return;
+            
+            // Create CSV content
+            let csvContent = '';
+            
+            // Header row
+            let headers = ['Position', 'Team', 'Division'];
+            for (let i = 1; i <= currentGameweek; i++) {
+                headers.push(`GW${i}`);
+            }
+            headers.push('Total');
+            csvContent += headers.join(',') + '\n';
+            
+            // Data rows
+            const sortedTeams = sortTeams();
+            sortedTeams.forEach((team, index) => {
+                const position = index + 1;
+                const total = calculateTotal(team.scores);
+                
+                let row = [position, team.name, team.division];
+                
+                // Add scores for each gameweek
+                for (let i = 0; i < currentGameweek; i++) {
+                    const score = team.scores[i] || 0;
+                    row.push(score);
+                }
+                
+                row.push(total);
+                csvContent += row.join(',') + '\n';
+            });
+            
+            // Add metadata
+            csvContent += '\n';
+            csvContent += `Export Date,${new Date().toLocaleDateString()}\n`;
+            csvContent += `Current Gameweek,${currentGameweek}\n`;
+            csvContent += `Total Teams,${teams.length}\n`;
+            
+            // Create and download file
+            const dataBlob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `premier_league_table_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showSuccessMessage('📊 Excel file exported successfully!');
+        }
+
+        function importData() {
+            if (!isAdminMode) return;
+            
+            document.getElementById('import-file').click();
+        }
+
+        function handleImportFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (importedData.teams && Array.isArray(importedData.teams)) {
+                        if (confirm('⚠️ Import data will replace all current data. Continue?')) {
+                            teams = importedData.teams;
+                            currentGameweek = importedData.currentGameweek || 1;
+                            selectedGameweek = importedData.currentGameweek || 1;
+                            
+                            renderTableHeader();
+                            renderTable();
+                            updateGameweekSelector();
+                            
+                            document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
+                            document.getElementById('input-section').style.display = 'none';
+                            
+                            // Save imported data
+                            saveData();
+                            
+                            showSuccessMessage('📤 Data imported successfully!');
+                        }
+                    } else {
+                        alert('⚠️ Invalid file format. Please select a valid JSON export file.');
+                    }
+                } catch (error) {
+                    alert('⚠️ Error reading file. Please make sure it\'s a valid JSON file.');
+                    console.error('Import error:', error);
+                }
+            };
+            
+            reader.readAsText(file);
+            
+            // Reset the file input
+            event.target.value = '';
+        }
+
+        function clearStorage() {
+            if (!isAdminMode) return;
+            
+            if (confirm('⚠️ Are you sure you want to clear all stored data? This will remove all saved progress.')) {
+                localStorage.removeItem('premierLeagueData');
+                showSuccessMessage('🗑️ Storage cleared successfully!');
+            }
+        }
+
+        // Initialize the application
+        function initializeApp() {
+            loadData();
+            renderTableHeader();
+            renderTable();
+            updateGameweekSelector();
+            document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', initializeApp);
+    </script>
+</body>
+</html>
