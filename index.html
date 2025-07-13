@@ -1,9 +1,9 @@
-≈<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Premier League Table - Dynamic Gameweeks</title>
+    <title>Premier League Table - Simplified</title>
     <style>
         * {
             margin: 0;
@@ -579,19 +579,17 @@
             </div>
             <h3>Admin Controls</h3>
             <div class="admin-controls">
-                <button class="admin-btn" onclick="addGameweek()">➕ Add New Gameweek</button>
-                <button class="admin-btn" onclick="showInputSection()">✏️ Update Scores</button>
-                <button class="admin-btn" onclick="resetData()">🔄 Reset All Data</button>
-                <button class="admin-btn" onclick="exportData()">📊 Export Excel</button>
-                <button class="admin-btn" onclick="clearStorage()">🗑️ Clear Storage</button>
+                <button class="admin-btn" onclick="addGameweek()">➕ Add Gameweek</button>
+                <button class="admin-btn" onclick="updateGameweek()">✏️ Update Gameweek</button>
+                <button class="admin-btn" onclick="removeGameweek()">🗑️ Remove Gameweek</button>
             </div>
         </div>
 
         <div class="input-section" id="input-section">
-            <h3>Enter Scores for Selected Gameweek</h3>
+            <h3 id="input-section-title">Enter Scores for Selected Gameweek</h3>
             
-            <div class="gameweek-selector">
-                <label for="gameweek-select">Select Gameweek to Edit:</label>
+            <div class="gameweek-selector" id="gameweek-selector">
+                <label for="gameweek-select">Select Gameweek:</label>
                 <select id="gameweek-select" onchange="onGameweekChange()">
                     <option value="1">Gameweek 1</option>
                 </select>
@@ -601,8 +599,8 @@
                 <!-- Team inputs will be generated here -->
             </div>
             <div style="text-align: center;">
-                <button class="btn save-btn" onclick="saveScores()">💾 Save Scores</button>
-                <button class="btn" onclick="toggleInputSection()">❌ Cancel</button>
+                <button class="btn save-btn" onclick="saveScores()" id="save-btn">💾 Save Scores</button>
+                <button class="btn" onclick="hideInputSection()">❌ Cancel</button>
             </div>
         </div>
 
@@ -641,9 +639,6 @@
         </div>
     </div>
 
-    <!-- Hidden file input for import -->
-    <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleImportFile(event)">
-
     <!-- Password Modal -->
     <div id="password-modal" class="modal">
         <div class="modal-content">
@@ -667,48 +662,68 @@
         let isAdminMode = false;
         let pendingAction = null;
 
-        // Initial team data
+        // Simplified data structure
+        let gameweeks = {
+            1: {
+                'Heroes': 23,
+                'Krakens': 21,
+                'Whales': 21,
+                'Hunters': 19,
+                'Seals': 18,
+                'Sharks': 18,
+                'Pirates': 14,
+                'Sailors': 14,
+                'Strangers': 14,
+                'Seahorse': 10,
+                'Anchors': 9,
+                'Alligators': 6
+            }
+        };
+
+        // Team information
         let teams = [
-            { name: 'Heroes', division: 'Alpha', scores: [23] },
-            { name: 'Krakens', division: 'Beta', scores: [21] },
-            { name: 'Whales', division: 'Alpha', scores: [21] },
-            { name: 'Hunters', division: 'Beta', scores: [19] },
-            { name: 'Seals', division: 'Alpha', scores: [18] },
-            { name: 'Sharks', division: 'Beta', scores: [18] },
-            { name: 'Pirates', division: 'Alpha', scores: [14] },
-            { name: 'Sailors', division: 'Beta', scores: [14] },
-            { name: 'Strangers', division: 'Beta', scores: [14] },
-            { name: 'Seahorse', division: 'Alpha', scores: [10] },
-            { name: 'Anchors', division: 'Alpha', scores: [9] },
-            { name: 'Alligators', division: 'Beta', scores: [6] }
+            { name: 'Heroes', division: 'Alpha' },
+            { name: 'Krakens', division: 'Beta' },
+            { name: 'Whales', division: 'Alpha' },
+            { name: 'Hunters', division: 'Beta' },
+            { name: 'Seals', division: 'Alpha' },
+            { name: 'Sharks', division: 'Beta' },
+            { name: 'Pirates', division: 'Alpha' },
+            { name: 'Sailors', division: 'Beta' },
+            { name: 'Strangers', division: 'Beta' },
+            { name: 'Seahorse', division: 'Alpha' },
+            { name: 'Anchors', division: 'Alpha' },
+            { name: 'Alligators', division: 'Beta' }
         ];
 
         let currentGameweek = 1;
         let selectedGameweek = 1;
 
-        // Load data from localStorage with fallback to initial data
+        // Load data from localStorage
         function loadData() {
             const savedData = localStorage.getItem('premierLeagueData');
             if (savedData) {
                 try {
                     const parsedData = JSON.parse(savedData);
+                    gameweeks = parsedData.gameweeks || gameweeks;
                     teams = parsedData.teams || teams;
                     currentGameweek = parsedData.currentGameweek || 1;
                     selectedGameweek = parsedData.selectedGameweek || 1;
                     console.log('Data loaded from localStorage');
                 } catch (e) {
                     console.error('Error loading data from localStorage:', e);
-                    saveData(); // Save current data if loading fails
+                    saveData();
                 }
             } else {
                 console.log('No saved data found, using initial data');
-                saveData(); // Save initial data
+                saveData();
             }
         }
 
         // Save data to localStorage
         function saveData() {
             const dataToSave = {
+                gameweeks: gameweeks,
                 teams: teams,
                 currentGameweek: currentGameweek,
                 selectedGameweek: selectedGameweek,
@@ -750,23 +765,13 @@
 
         function checkPassword() {
             const enteredPassword = document.getElementById('password-input').value;
-            console.log('Password entered:', enteredPassword);
-            console.log('Expected password:', ADMIN_PASSWORD);
-            console.log('Pending action:', pendingAction);
             
             if (enteredPassword === ADMIN_PASSWORD) {
-                console.log('Password correct');
-                
-                // Handle the pending action BEFORE closing modal (which clears pendingAction)
                 if (pendingAction === 'adminAccess') {
-                    console.log('Calling enableAdminMode');
                     enableAdminMode();
                 }
-                
-                // Close modal after handling the action
                 closePasswordModal();
             } else {
-                console.log('Password incorrect');
                 document.getElementById('error-message').style.display = 'block';
                 document.getElementById('password-input').value = '';
                 document.getElementById('password-input').focus();
@@ -774,30 +779,15 @@
         }
 
         function enableAdminMode() {
-            console.log('enableAdminMode called');
             isAdminMode = true;
-            
-            const adminSection = document.getElementById('admin-section');
-            console.log('Admin section element:', adminSection);
-            
-            if (adminSection) {
-                adminSection.classList.remove('hidden');
-                console.log('Admin section classes after removal:', adminSection.classList);
-                
-                // Double check by setting display style directly
-                adminSection.style.display = 'block';
-                console.log('Admin section display style set to block');
-            } else {
-                console.error('Admin section element not found!');
-            }
-            
-            showSuccessMessage('🔓 Admin access granted! You can now manage gameweeks and scores.');
+            document.getElementById('admin-section').classList.remove('hidden');
+            showSuccessMessage('🔓 Admin access granted!');
         }
 
         function showPublicView() {
             isAdminMode = false;
             document.getElementById('admin-section').classList.add('hidden');
-            document.getElementById('input-section').style.display = 'none';
+            hideInputSection();
             showSuccessMessage('👁️ Switched to public view');
         }
 
@@ -816,14 +806,22 @@
             });
         });
 
-        function calculateTotal(scores) {
-            return scores.reduce((sum, score) => sum + score, 0);
+        // Calculate total score for a team
+        function calculateTotal(teamName) {
+            let total = 0;
+            for (let gw = 1; gw <= currentGameweek; gw++) {
+                if (gameweeks[gw] && gameweeks[gw][teamName]) {
+                    total += gameweeks[gw][teamName];
+                }
+            }
+            return total;
         }
 
+        // Sort teams by total score
         function sortTeams() {
             return teams.sort((a, b) => {
-                const totalA = calculateTotal(a.scores);
-                const totalB = calculateTotal(b.scores);
+                const totalA = calculateTotal(a.name);
+                const totalB = calculateTotal(b.name);
                 return totalB - totalA;
             });
         }
@@ -843,15 +841,15 @@
             
             sortedTeams.forEach((team, index) => {
                 const position = index + 1;
-                const total = calculateTotal(team.scores);
+                const total = calculateTotal(team.name);
                 const positionClass = getPositionClass(position, total);
                 
                 const row = document.createElement('tr');
                 row.className = positionClass;
                 
                 let scoresCells = '';
-                for (let i = 0; i < currentGameweek; i++) {
-                    const score = team.scores[i] || 0;
+                for (let i = 1; i <= currentGameweek; i++) {
+                    const score = gameweeks[i] && gameweeks[i][team.name] ? gameweeks[i][team.name] : 0;
                     scoresCells += `<td class="points">${score}</td>`;
                 }
                 
@@ -907,15 +905,17 @@
             generateTeamInputs();
         }
 
+        // Admin functions
         function addGameweek() {
             if (!isAdminMode) return;
             
             currentGameweek++;
             selectedGameweek = currentGameweek;
             
-            // Add zero scores for new gameweek
+            // Initialize new gameweek with zero scores
+            gameweeks[currentGameweek] = {};
             teams.forEach(team => {
-                team.scores.push(0);
+                gameweeks[currentGameweek][team.name] = 0;
             });
             
             renderTableHeader();
@@ -924,14 +924,61 @@
             
             document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
             
-            // Save data after adding gameweek
             saveData();
-            
             showSuccessMessage(`➕ Gameweek ${currentGameweek} added successfully!`);
             
-            // Automatically show input section for new gameweek
-            generateTeamInputs();
-            showInputSection();
+            // Show input section for the new gameweek
+            showInputSection('Enter Scores for New Gameweek');
+        }
+
+        function updateGameweek() {
+            if (!isAdminMode) return;
+            
+            if (currentGameweek === 0) {
+                showSuccessMessage('❌ No gameweeks available to update!');
+                return;
+            }
+            
+            showInputSection('Update Scores for Selected Gameweek');
+        }
+
+        function removeGameweek() {
+            if (!isAdminMode) return;
+            
+            if (currentGameweek === 0) {
+                showSuccessMessage('❌ No gameweeks available to remove!');
+                return;
+            }
+            
+            if (currentGameweek === 1) {
+                showSuccessMessage('❌ Cannot remove the last remaining gameweek!');
+                return;
+            }
+            
+            if (confirm(`⚠️ Are you sure you want to remove Gameweek ${selectedGameweek}? This action cannot be undone.`)) {
+                // Remove the selected gameweek
+                delete gameweeks[selectedGameweek];
+                
+                // Shift all subsequent gameweeks down
+                for (let gw = selectedGameweek + 1; gw <= currentGameweek; gw++) {
+                    if (gameweeks[gw]) {
+                        gameweeks[gw - 1] = gameweeks[gw];
+                        delete gameweeks[gw];
+                    }
+                }
+                
+                currentGameweek--;
+                selectedGameweek = Math.min(selectedGameweek, currentGameweek);
+                
+                renderTableHeader();
+                renderTable();
+                updateGameweekSelector();
+                
+                document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
+                
+                saveData();
+                showSuccessMessage(`🗑️ Gameweek removed successfully!`);
+            }
         }
 
         function generateTeamInputs() {
@@ -941,7 +988,7 @@
             teams.forEach((team, index) => {
                 const teamInput = document.createElement('div');
                 teamInput.className = 'team-input';
-                const currentScore = team.scores[selectedGameweek - 1] || 0;
+                const currentScore = gameweeks[selectedGameweek] && gameweeks[selectedGameweek][team.name] ? gameweeks[selectedGameweek][team.name] : 0;
                 teamInput.innerHTML = `
                     <span>${team.name} <span class="division ${team.division.toLowerCase()}">${team.division}</span></span>
                     <input type="number" id="score-${index}" value="${currentScore}" min="0" max="50">
@@ -950,191 +997,38 @@
             });
         }
 
-        function showInputSection() {
+        function showInputSection(title = 'Enter Scores for Selected Gameweek') {
             if (!isAdminMode) return;
             
+            document.getElementById('input-section-title').textContent = title;
             updateGameweekSelector();
             generateTeamInputs();
             document.getElementById('input-section').style.display = 'block';
         }
 
-        function toggleInputSection() {
-            const inputSection = document.getElementById('input-section');
-            const isVisible = inputSection.style.display === 'block';
-            
-            if (isVisible) {
-                inputSection.style.display = 'none';
-            } else {
-                showInputSection();
-            }
+        function hideInputSection() {
+            document.getElementById('input-section').style.display = 'none';
         }
 
         function saveScores() {
             if (!isAdminMode) return;
             
+            // Initialize gameweek if it doesn't exist
+            if (!gameweeks[selectedGameweek]) {
+                gameweeks[selectedGameweek] = {};
+            }
+            
             teams.forEach((team, index) => {
                 const scoreInput = document.getElementById(`score-${index}`);
                 const score = parseInt(scoreInput.value) || 0;
-                
-                while (team.scores.length < selectedGameweek) {
-                    team.scores.push(0);
-                }
-                
-                team.scores[selectedGameweek - 1] = score;
+                gameweeks[selectedGameweek][team.name] = score;
             });
             
             renderTable();
-            toggleInputSection();
+            hideInputSection();
             
-            // Save data after updating scores
             saveData();
-            
             showSuccessMessage(`💾 Scores saved for Gameweek ${selectedGameweek}!`);
-        }
-
-        function resetData() {
-            if (!isAdminMode) return;
-            
-            if (confirm('⚠️ Are you sure you want to reset all data? This action cannot be undone.')) {
-                // Reset to initial state
-                teams = [
-                    { name: 'Heroes', division: 'Alpha', scores: [23] },
-                    { name: 'Krakens', division: 'Beta', scores: [21] },
-                    { name: 'Whales', division: 'Alpha', scores: [21] },
-                    { name: 'Hunters', division: 'Beta', scores: [19] },
-                    { name: 'Seals', division: 'Alpha', scores: [18] },
-                    { name: 'Sharks', division: 'Beta', scores: [18] },
-                    { name: 'Pirates', division: 'Alpha', scores: [14] },
-                    { name: 'Sailors', division: 'Beta', scores: [14] },
-                    { name: 'Strangers', division: 'Beta', scores: [14] },
-                    { name: 'Seahorse', division: 'Alpha', scores: [10] },
-                    { name: 'Anchors', division: 'Alpha', scores: [9] },
-                    { name: 'Alligators', division: 'Beta', scores: [6] }
-                ];
-                
-                currentGameweek = 1;
-                selectedGameweek = 1;
-                
-                renderTableHeader();
-                renderTable();
-                updateGameweekSelector();
-                
-                document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
-                document.getElementById('input-section').style.display = 'none';
-                
-                // Save reset data
-                saveData();
-                
-                showSuccessMessage('🔄 All data has been reset to initial state!');
-            }
-        }
-
-        function exportData() {
-            if (!isAdminMode) return;
-            
-            // Create CSV content
-            let csvContent = '';
-            
-            // Header row
-            let headers = ['Position', 'Team', 'Division'];
-            for (let i = 1; i <= currentGameweek; i++) {
-                headers.push(`GW${i}`);
-            }
-            headers.push('Total');
-            csvContent += headers.join(',') + '\n';
-            
-            // Data rows
-            const sortedTeams = sortTeams();
-            sortedTeams.forEach((team, index) => {
-                const position = index + 1;
-                const total = calculateTotal(team.scores);
-                
-                let row = [position, team.name, team.division];
-                
-                // Add scores for each gameweek
-                for (let i = 0; i < currentGameweek; i++) {
-                    const score = team.scores[i] || 0;
-                    row.push(score);
-                }
-                
-                row.push(total);
-                csvContent += row.join(',') + '\n';
-            });
-            
-            // Add metadata
-            csvContent += '\n';
-            csvContent += `Export Date,${new Date().toLocaleDateString()}\n`;
-            csvContent += `Current Gameweek,${currentGameweek}\n`;
-            csvContent += `Total Teams,${teams.length}\n`;
-            
-            // Create and download file
-            const dataBlob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
-            const url = URL.createObjectURL(dataBlob);
-            
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `premier_league_table_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
-            
-            URL.revokeObjectURL(url);
-            showSuccessMessage('📊 Excel file exported successfully!');
-        }
-
-        function importData() {
-            if (!isAdminMode) return;
-            
-            document.getElementById('import-file').click();
-        }
-
-        function handleImportFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    
-                    if (importedData.teams && Array.isArray(importedData.teams)) {
-                        if (confirm('⚠️ Import data will replace all current data. Continue?')) {
-                            teams = importedData.teams;
-                            currentGameweek = importedData.currentGameweek || 1;
-                            selectedGameweek = importedData.currentGameweek || 1;
-                            
-                            renderTableHeader();
-                            renderTable();
-                            updateGameweekSelector();
-                            
-                            document.getElementById('current-gameweek').textContent = `Current Gameweek: ${currentGameweek}`;
-                            document.getElementById('input-section').style.display = 'none';
-                            
-                            // Save imported data
-                            saveData();
-                            
-                            showSuccessMessage('📤 Data imported successfully!');
-                        }
-                    } else {
-                        alert('⚠️ Invalid file format. Please select a valid JSON export file.');
-                    }
-                } catch (error) {
-                    alert('⚠️ Error reading file. Please make sure it\'s a valid JSON file.');
-                    console.error('Import error:', error);
-                }
-            };
-            
-            reader.readAsText(file);
-            
-            // Reset the file input
-            event.target.value = '';
-        }
-
-        function clearStorage() {
-            if (!isAdminMode) return;
-            
-            if (confirm('⚠️ Are you sure you want to clear all stored data? This will remove all saved progress.')) {
-                localStorage.removeItem('premierLeagueData');
-                showSuccessMessage('🗑️ Storage cleared successfully!');
-            }
         }
 
         // Initialize the application
@@ -1151,3 +1045,4 @@
     </script>
 </body>
 </html>
+
