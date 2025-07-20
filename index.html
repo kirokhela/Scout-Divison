@@ -404,11 +404,18 @@
             const teamsWithSameScore = teamsWithPositions.filter(t => t.total === total);
             const isTied = teamsWithSameScore.length > 1;
             
-            if (position === 1 && !isTied) return 'top-1';
-            if (position === 1 && isTied) return 'tied';
-            if (isTied && position > 1) return 'tied';
+            // First place gets gold background regardless of ties
+            if (position === 1) return 'top-1';
+            
+            // Positions 2-3 get orange background regardless of ties
             if (position <= 3) return 'top-3';
+            
+            // Add green border for tied teams (but keep their position-based background)
+            if (isTied && position > 3) return 'tied';
+            
+            // Bottom 3 positions
             if (position >= teams.length - 2) return 'bottom-3';
+            
             return '';
         }
 
