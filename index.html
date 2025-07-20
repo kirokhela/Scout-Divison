@@ -198,6 +198,10 @@
             border-left: 4px solid #e74c3c;
         }
 
+        .tied {
+            border-left: 4px solid #27ae60;
+        }
+
         .stats-footer {
             background: #f8f9fa;
             padding: 20px;
@@ -236,6 +240,10 @@
 
         .legend-color.red {
             background: #e74c3c;
+        }
+
+        .legend-color.green {
+            background: #27ae60;
         }
 
         @media (max-width: 768px) {
@@ -285,6 +293,10 @@
                 <div class="legend-item">
                     <div class="legend-color orange"></div>
                     <span>Top 3</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color green"></div>
+                    <span>Tied</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color red"></div>
@@ -358,32 +370,56 @@
             return total;
         }
 
-        // Sort teams by total score
-        function sortTeams() {
-            return teams.sort((a, b) => {
-                const totalA = calculateTotal(a.name);
-                const totalB = calculateTotal(b.name);
-                return totalB - totalA;
-            });
+        // Sort teams by total score and add position information
+        function getTeamsWithPositions() {
+            // First, calculate totals and sort by score
+            const teamsWithTotals = teams.map(team => ({
+                ...team,
+                total: calculateTotal(team.name)
+            })).sort((a, b) => b.total - a.total);
+
+            // Then assign positions, handling ties
+            let currentPosition = 1;
+            let teamsWithPositions = [];
+            
+            for (let i = 0; i < teamsWithTotals.length; i++) {
+                const team = teamsWithTotals[i];
+                
+                // If this is not the first team and the score is different from previous team
+                if (i > 0 && teamsWithTotals[i - 1].total !== team.total) {
+                    currentPosition = i + 1;
+                }
+                
+                teamsWithPositions.push({
+                    ...team,
+                    position: currentPosition
+                });
+            }
+            
+            return teamsWithPositions;
         }
 
-        function getPositionClass(position, total) {
-            if (position === 1) return 'top-1';
+        function getPositionClass(position, total, teamsWithPositions) {
+            // Check if this team is tied with others
+            const teamsWithSameScore = teamsWithPositions.filter(t => t.total === total);
+            const isTied = teamsWithSameScore.length > 1;
+            
+            if (position === 1 && !isTied) return 'top-1';
+            if (position === 1 && isTied) return 'tied';
+            if (isTied && position > 1) return 'tied';
             if (position <= 3) return 'top-3';
             if (position >= teams.length - 2) return 'bottom-3';
             return '';
         }
 
         function renderTable() {
-            const sortedTeams = sortTeams();
+            const teamsWithPositions = getTeamsWithPositions();
             const tableBody = document.getElementById('table-body');
             
             tableBody.innerHTML = '';
             
-            sortedTeams.forEach((team, index) => {
-                const position = index + 1;
-                const total = calculateTotal(team.name);
-                const positionClass = getPositionClass(position, total);
+            teamsWithPositions.forEach((team) => {
+                const positionClass = getPositionClass(team.position, team.total, teamsWithPositions);
                 
                 const row = document.createElement('tr');
                 row.className = positionClass;
@@ -395,13 +431,13 @@
                 }
                 
                 row.innerHTML = `
-                    <td class="position">${position}</td>
+                    <td class="position">${team.position}</td>
                     <td class="team-name">
                         ${team.name}
                         <span class="division ${team.division.toLowerCase()}">${team.division}</span>
                     </td>
                     ${scoresCells}
-                    <td class="total-points">${total}</td>
+                    <td class="total-points">${team.total}</td>
                 `;
                 
                 tableBody.appendChild(row);
