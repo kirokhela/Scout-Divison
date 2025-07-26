@@ -495,7 +495,7 @@
     <div class="container">
         <div class="header">
             <h1>Kashafa Premier League</h1>
-            <p id="current-gameweek">Current Gameweek: 2</p>
+            <p id="current-gameweek">Current Gameweek: 3</p>
         </div>
 
         <div class="table-container">
@@ -506,6 +506,7 @@
                         <th>Team</th>
                         <th class="gameweek-header">GW1</th>
                         <th class="gameweek-header">GW2</th>
+                        <th class="gameweek-header">GW3</th>
                         <th class="total-header">Total</th>
                     </tr>
                 </thead>
@@ -587,7 +588,7 @@
     <script>
         console.log('JavaScript loaded successfully!');
         
-        // Simplified data structure with gameweek 2 added
+        // Data structure with gameweek 3 added
         let gameweeks = {
             1: {
                 'Heroes': 23,
@@ -616,6 +617,20 @@
                 'Seahorse': 14,
                 'Anchors': 29,
                 'Alligators': 14
+            },
+            3: {
+                'Heroes': 18,
+                'Seals': 18,
+                'Hunters': 16,
+                'Whales': 14,
+                'Krakens': 15,
+                'Sharks': 10,
+                'Pirates': 10,
+                'Sailors': 13,
+                'Strangers': 15,
+                'Seahorse': 15,
+                'Anchors': 20,
+                'Alligators': 20
             }
         };
 
@@ -635,7 +650,7 @@
             { name: 'Alligators', division: 'Beta' }
         ];
 
-        let currentGameweek = 2;
+        let currentGameweek = 3;
 
         // Calculate total score for a team
         function calculateTotal(teamName) {
