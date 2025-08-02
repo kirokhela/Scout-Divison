@@ -686,21 +686,33 @@
                 total: calculateTotal(team.name)
             })).sort((a, b) => b.total - a.total);
 
-            // Then assign positions, handling ties
-            let currentPosition = 1;
+            // Then assign positions with consecutive numbering for ties
             let teamsWithPositions = [];
+            let nextPosition = 1;
             
             for (let i = 0; i < teamsWithTotals.length; i++) {
                 const team = teamsWithTotals[i];
+                let position;
                 
-                // If this is not the first team and the score is different from previous team
-                if (i > 0 && teamsWithTotals[i - 1].total !== team.total) {
-                    currentPosition = i + 1;
+                if (i === 0) {
+                    // First team gets position 1
+                    position = 1;
+                } else if (teamsWithTotals[i].total === teamsWithTotals[i - 1].total) {
+                    // Same score as previous team, so same position
+                    position = teamsWithPositions[i - 1].position;
+                } else {
+                    // Different score, get next consecutive position
+                    position = nextPosition;
+                }
+                
+                // Update next position for the next different score
+                if (i === 0 || teamsWithTotals[i].total !== teamsWithTotals[i - 1].total) {
+                    nextPosition = position + 1;
                 }
                 
                 teamsWithPositions.push({
                     ...team,
-                    position: currentPosition
+                    position: position
                 });
             }
             
